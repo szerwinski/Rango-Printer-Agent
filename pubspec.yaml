@@ -1,0 +1,23 @@
+name: rango_printer_agent
+description: A sample command-line application.
+version: 1.0.0
+# repository: https://github.com/my_org/my_repo
+
+environment:
+  sdk: ^3.5.4
+
+# Add regular dependencies here.
+dependencies:
+  # path: ^1.8.0
+  pdf: ^3.11.1
+  hasura_connect: ^5.0.0+3
+  yaml: ^3.1.2
+  yaml_writer: ^2.0.1
+  decimal: ^3.0.2
+  intl: ^0.19.0
+  win32: ^5.0.0
+  http: ^1.2.2
+
+dev_dependencies:
+  lints: ^4.0.0
+  test: ^1.24.0

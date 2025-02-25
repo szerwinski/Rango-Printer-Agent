@@ -1,0 +1,16 @@
+# graphql:
+#   endpoint: 'https://whole-buck-36.hasura.app/v1/graphql'
+#   secret: 'e4NUc6FuJBXFrkGmaG3sB310qpY13ds1nbas9gLh1BHsncx6sGzswOFvgny0pe5a'
+# restaurant:
+#   id: '23'
+#   name: 'teste'
+# endpoint: 'http://127.0.0.1:1337/v2'
+# printer: 'Microsoft Print to PDF'
+graphql:
+  endpoint: 'https://charming-primate-80.hasura.app/v1/graphql'
+  secret: '9NU047g7FxRtZiImrmmqQOJiQyTJLTvU5l941X01Di1IZwOeq5NCUBU8h5nueGO'
+restaurant:
+  id: '8'
+  name: 'RanGo'
+endpoint: 'https://www.api.rangosemfila.com.br/v2'
+printer: 'Microsoft Print to PDF'
