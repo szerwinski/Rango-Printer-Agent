@@ -17,27 +17,19 @@ class GraphqlService {
 
   static Future<void> listenPrinters() async {
     final subscriptionDocument = r'''
-      subscription GetTableSaleComponents($restaurantId: Int!, $updated_at: timestamp) {
-        table_sales(
-          where: {
-            table_sales_restaurant_links: {restaurant_id: {_eq: $restaurantId}},
-            status: {_eq: "OPEN"},
-            updated_at: {_gt: $updated_at}
-          },
-          order_by: {updated_at: desc}
-        ) {
-          id
-          created_at
-          updated_at
-          status
-          table_sales_components(where: {component_type: {_eq: "order.data"}}) {
-            id
-            component_id
-          }
-        }
-      }
+subscription GetTableSaleComponents($restaurantId: Int!, $updated_at: timestamp) {
+  table_sales(where: {table_sales_restaurant_links: {restaurant_id: {_eq: $restaurantId}}, status: {_eq: "OPEN"}, updated_at: {_gt: $updated_at}}, order_by: {updated_at: desc}) {
+    id
+    created_at
+    updated_at
+    status
+    table_sales_components(where: {component_type: {_eq: "order.data"}}) {
+      id
+      component_id
+    }
+  }
+}
     ''';
-
     final startTime =
         DateTime.now().add(const Duration(seconds: -30)).toString();
     Snapshot snapshot = await hasuraConnect.subscription(
@@ -56,7 +48,6 @@ class GraphqlService {
       for (var element in tableSales) {
         await getReadyOrders(element.componentIds, element.id);
       }
-      
     }).onError((err) {
       logMessage('Erro ao escutar os pedidos: $err');
       print(err);
@@ -103,13 +94,17 @@ class GraphqlService {
 
           // Get list of already printed orders
           List<String> printedOrders = await PDFService().pedidoJaImpressao(
-              processedTable.tableSale!.data!.where((e) => e.uuid != null && e.status == "READY")
+              processedTable.tableSale!.data!
+                  .where((e) => e.uuid != null && e.status == "READY")
                   .map((e) => e.uuid.toString())
                   .toList());
 
-          // Filter out already printed orders
+          // Filter out already printed orders and only items from mobile
           var remainingOrders = processedTable.tableSale!.data!
-              .where((item) => !printedOrders.contains(item.uuid.toString()) && item.status == "READY")
+              .where((item) =>
+                  !printedOrders.contains(item.uuid.toString()) &&
+                  item.status == "READY" &&
+                  item.fromMobile == true)
               .toList();
 
           // Update the table's data with the filtered list
