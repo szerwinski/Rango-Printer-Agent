@@ -4,7 +4,7 @@ import 'package:rango_printer_agent/log.dart';
 import 'package:rango_printer_agent/paths.dart';
 import 'package:yaml/yaml.dart';
 import 'package:yaml_writer/yaml_writer.dart';
-import 'package:win32/win32.dart';
+import 'package:win32/win32.dart' as win;
 import 'package:ffi/ffi.dart';
 
 late Config globalConfig;
@@ -31,19 +31,19 @@ Future<void> initializeConfig() async {
 // Função para listar impressoras disponíveis no Windows
 List<String> listAvailablePrinters() {
   final printers = <String>[];
-  
+
   // Aloca buffer para os nomes das impressoras
-  final pSize = calloc<DWORD>();
-  final flags = PRINTER_ENUM_LOCAL | PRINTER_ENUM_CONNECTIONS;
-  
+  final pSize = calloc<win.DWORD>();
+  final flags = win.PRINTER_ENUM_LOCAL | win.PRINTER_ENUM_CONNECTIONS;
+
   // Primeira chamada para obter o tamanho necessário do buffer
-  EnumPrinters(flags, nullptr, 2, nullptr, 0, pSize, calloc<DWORD>());
-  
+  win.EnumPrinters(flags, nullptr, 2, nullptr, 0, pSize, calloc<win.DWORD>());
+
   final pPrinterInfo = calloc<Uint8>(pSize.value);
-  final pcReturned = calloc<DWORD>();
-  
+  final pcReturned = calloc<win.DWORD>();
+
   // Segunda chamada para obter as informações das impressoras
-  final result = EnumPrinters(
+  final result = win.EnumPrinters(
     flags,
     nullptr,
     2,
@@ -52,34 +52,34 @@ List<String> listAvailablePrinters() {
     pSize,
     pcReturned,
   );
-  
+
   if (result == 1) {
     final count = pcReturned.value;
     var current = pPrinterInfo;
-    
+
     for (var i = 0; i < count; i++) {
-      final printerInfo = current.cast<PRINTER_INFO_2>();
+      final printerInfo = current.cast<win.PRINTER_INFO_2>();
       final printerName = printerInfo.ref.pPrinterName.toDartString();
       printers.add(printerName);
-      
+
       // Avança para o próximo PRINTER_INFO_2
       // ignore: deprecated_member_use
-      current = current.elementAt(sizeOf<PRINTER_INFO_2>());
+      current = current.elementAt(sizeOf<win.PRINTER_INFO_2>());
     }
   }
-  
+
   // Libera a memória alocada
-  free(pSize);
-  free(pPrinterInfo);
-  free(pcReturned);
-  
+  win.free(pSize);
+  win.free(pPrinterInfo);
+  win.free(pcReturned);
+
   return printers;
 }
 
 // Função para selecionar uma impressora da lista
 String selectPrinter() {
   final printers = listAvailablePrinters();
-  
+
   if (printers.isEmpty) {
     print('Nenhuma impressora encontrada.');
     return '';
@@ -93,14 +93,14 @@ String selectPrinter() {
   while (true) {
     stdout.write('\nSelecione o número da impressora (1-${printers.length}): ');
     final input = stdin.readLineSync();
-    
+
     if (input == null) continue;
-    
+
     final selection = int.tryParse(input);
     if (selection != null && selection >= 1 && selection <= printers.length) {
       return printers[selection - 1];
     }
-    
+
     print('Seleção inválida. Tente novamente.');
   }
 }
@@ -240,7 +240,7 @@ class Config {
   void updatePrinter(String filePath) {
     print('\nSelecionando nova impressora padrão...');
     final newPrinter = selectPrinter();
-    
+
     if (newPrinter.isNotEmpty) {
       final updatedConfig = Config(
         graphql: graphql,
@@ -248,7 +248,7 @@ class Config {
         endpoint: endpoint,
         printer: newPrinter,
       );
-      
+
       saveToYamlFile(updatedConfig, filePath);
       print('Impressora padrão atualizada para: $newPrinter');
     }
