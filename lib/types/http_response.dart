@@ -154,7 +154,7 @@ class Datum {
         id: json["id"],
         quantity: json["quantity"],
         fidelityRescue: json["fidelityRescue"],
-        fromMobile: json["fromMobile"],
+        fromMobile: json["fromMobile"] ?? false,
         note: json["note"],
         status: json["status"],
         freePrice: json["freePrice"],
