@@ -8,7 +8,7 @@
 # printer: 'Microsoft Print to PDF'
 graphql:
   endpoint: 'https://charming-primate-80.hasura.app/v1/graphql'
-  secret: '9NU047g7FxRtZiImrmmqQOJiQyTJLTvU5l941X01Di1IZwOeq5NCUBU8h5nueGO'
+  secret: '9NU047g7FxRtZiImrmmqQOJiQyTJLTvU5l941X01Di1IZwOeq5NCUBU8h5nueGOr'
 restaurant:
   id: '8'
   name: 'RanGo'
