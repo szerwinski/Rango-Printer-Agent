@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:path/path.dart' as path;
+
 class AppPaths {
   AppPaths._();
 
@@ -7,14 +8,16 @@ class AppPaths {
   static String get baseDir {
     final userProfile = Platform.environment['USERPROFILE'];
     if (userProfile == null || userProfile.isEmpty) {
-      throw Exception('Não foi possível determinar o diretório do usuário (USERPROFILE)');
+      throw Exception(
+          'Não foi possível determinar o diretório do usuário (USERPROFILE)');
     }
+    // return Directory.current.path;
     return path.join(userProfile, '.rango-printer');
   }
 
   // Arquivo de configuração
   static String get configFile => path.join(baseDir, 'config.yaml');
-  
+
   // Arquivo de log
   static String get logFile => path.join(baseDir, 'app.log');
 
@@ -25,8 +28,8 @@ class AppPaths {
   static String get pdfToPrinter => path.join(baseDir, 'PDFtoPrinter.exe');
 
   // pedidos impressos
-  static String get pedidosImpressos => path.join(baseDir, 'pedidos_impressos.txt');
-
+  static String get pedidosImpressos =>
+      path.join(baseDir, 'pedidos_impressos.txt');
 
   // Garante que o diretório base existe
   static void ensureDirectoryExists() {
