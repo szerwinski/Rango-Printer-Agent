@@ -46,7 +46,7 @@ subscription GetTableSaleComponents($restaurantId: Int!, $updated_at: timestamp)
           .toList();
 
       for (var element in tableSales) {
-        await getReadyOrders(element.componentIds, element.id);
+        await getReadyOrders(element.id);
       }
     }).onError((err) {
       logMessage('Erro ao escutar os pedidos: $err');
@@ -54,66 +54,42 @@ subscription GetTableSaleComponents($restaurantId: Int!, $updated_at: timestamp)
     });
   }
 
-  static Future<void> getReadyOrders(
-      List<int> componentIds, int idTable) async {
-    final getReadyOrdersQuery = r'''
-      query GetOrderDataDetails($componentIds: [Int!]) {
-        components_order_data_aggregate(
-          where: {status: {_eq: "READY"}, id: {_in: $componentIds}}
-        ) {
-          aggregate {
-            count(columns: id)
-          }
-        }
-      }
-    ''';
-
+  static Future<void> getReadyOrders(int idTable) async {
     try {
-      final response = await hasuraConnect.query(
-        getReadyOrdersQuery,
-        variables: {"componentIds": componentIds},
+      var tables = await TableService.getTables(
+        restaurantId: globalConfig.restaurant.id,
+        tableSaleId: idTable,
       );
 
-      final count = response['data']['components_order_data_aggregate']
-          ['aggregate']['count'] as int;
-      await logMessage("Imprimindo $count pedidos");
+      for (var table in tables) {
+        if (table.tableSale == null || table.tableSale!.data == null) {
+          continue;
+        }
 
-      if (count > 0) {
-        var tables = await TableService.getTables(
-          restaurantId: globalConfig.restaurant.id,
-          tableSaleId: idTable,
-        );
+        // Create a copy of the table to avoid modifying the original
+        var processedTable = table;
 
-        for (var table in tables) {
-          if (table.tableSale == null || table.tableSale!.data == null) {
-            continue;
-          }
+        // Get list of already printed orders
+        List<String> printedOrders = await PDFService().pedidoJaImpressao(
+            processedTable.tableSale!.data!
+                .where((e) => e.uuid != null && e.status == "READY")
+                .map((e) => e.uuid.toString())
+                .toList());
 
-          // Create a copy of the table to avoid modifying the original
-          var processedTable = table;
+        // Filter out already printed orders and only items from mobile
+        var remainingOrders = processedTable.tableSale!.data!
+            .where((item) =>
+                !printedOrders.contains(item.uuid.toString()) &&
+                item.status == "READY" &&
+                item.fromMobile == true)
+            .toList();
 
-          // Get list of already printed orders
-          List<String> printedOrders = await PDFService().pedidoJaImpressao(
-              processedTable.tableSale!.data!
-                  .where((e) => e.uuid != null && e.status == "READY")
-                  .map((e) => e.uuid.toString())
-                  .toList());
+        // Update the table's data with the filtered list
+        processedTable.tableSale!.data = remainingOrders;
 
-          // Filter out already printed orders and only items from mobile
-          var remainingOrders = processedTable.tableSale!.data!
-              .where((item) =>
-                  !printedOrders.contains(item.uuid.toString()) &&
-                  item.status == "READY" &&
-                  item.fromMobile == true)
-              .toList();
-
-          // Update the table's data with the filtered list
-          processedTable.tableSale!.data = remainingOrders;
-
-          // Only print if there are new orders
-          if (remainingOrders.isNotEmpty) {
-            await PDFService().printTable(processedTable);
-          }
+        // Only print if there are new orders
+        if (remainingOrders.isNotEmpty) {
+          await PDFService().printTable(processedTable);
         }
       }
     } catch (e) {
